@@ -121,11 +121,36 @@ static int read( int fd, void *buffer, size_t r_count )
 	return SemihostCall( Semihost_SYS_READ, param );
 }
 
+/*
+ * Writes the contents of the buffer to a specified file
+ * at the current file position.
+ */
+static int write( int fd, void *buffer, size_t w_count )
+{
+	union param_t param[3] = {0};
+
+	/*
+	 * Word 1: a handle for a file previously opened with SYS_OPEN.
+	 * Word 2: points to buffer
+	 * Word 3: the number of bytes to be written to a file from the buffer.
+	 */
+	param[0].pdInt = fd;
+	param[1].pdVoidPtr = buffer;
+	param[2].pdInt = w_count;
+
+	/*
+	 * 0 if the call is successful.
+	 * the number of bytes that are not written, if there is an error.
+	 */
+	return SemihostCall( Semihost_SYS_WRITE, param );
+}
+
 #define MAX_BUFFER_LEN	5
 
 int main(void)
 {
 	char *filename = "test.dat", buffer[ MAX_BUFFER_LEN + 1 ] = {0};
+	char *str1 = "Helloo";
 	int fd, result;
 
 	if ( ( fd = open( filename, O_RDWR ) ) == -1 )
@@ -134,9 +159,8 @@ int main(void)
 	{
 		printf( "fd is %d\n", fd );
 
-		result = read( fd, buffer, MAX_BUFFER_LEN );
-		printf( "Value return from read: %d\n" \
-				"The String read: %s\n", result, buffer );
+		result = write( fd, str1, MAX_BUFFER_LEN );
+		printf( "Value return from write: %d\n", result );
 
 		result = close( fd );
 		printf( "Value return from close: %d\n", result );
