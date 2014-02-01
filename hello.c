@@ -59,7 +59,7 @@ size_t strlen(const char *s)
 /* SemihostCall parameter structure */
 union param_t {
 	int		pdInt;
-	void	*pdPtr;
+	void	*pdVoidPtr;
 	char	*pdChrPtr;
 };
 
@@ -98,18 +98,48 @@ static int close( int fd )
 	return SemihostCall( Semihost_SYS_CLOSE, param );
 }
 
+/* Reads the contents of a file into the buffer. */
+static int read( int fd, void *buffer, size_t r_count )
+{
+	union param_t param[3] = {0};
+
+	/*
+	 * Word 1: A handle for a file previously opened with SYS_OPEN.
+	 * Word 2: points to buffer
+	 * Word 3: the number of bytes to read to the buffer from the file.
+	 */
+	param[0].pdInt = fd;
+	param[1].pdVoidPtr = buffer;
+	param[2].pdInt = r_count;
+
+	/*
+	 * 0: the call is successful
+	 * the same as word 3: the call is failed, EOF is assumed.
+	 * smaller than word 3: the call is successful, but the buffer
+	 * 		has not been filled.
+	 */
+	return SemihostCall( Semihost_SYS_READ, param );
+}
+
+#define MAX_BUFFER_LEN	5
+
 int main(void)
 {
-	char *filename = "test.dat";
+	char *filename = "test.dat", buffer[ MAX_BUFFER_LEN + 1 ] = {0};
 	int fd, result;
 
 	if ( ( fd = open( filename, O_RDWR ) ) == -1 )
-		printf( "Failed in opening-file call\n" );
+		printf( "The file dose not exist!\n" );
 	else
 	{
-		printf( "Success in opening-file call: %d\n", fd );
+		printf( "fd is %d\n", fd );
+
+		result = read( fd, buffer, MAX_BUFFER_LEN );
+		printf( "Value return from read: %d\n" \
+				"The String read: %s\n", result, buffer );
+
 		result = close( fd );
-		printf( "%d\n", result );
+		printf( "Value return from close: %d\n", result );
 	}
 
 	return 0;
