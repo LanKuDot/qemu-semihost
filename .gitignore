@@ -1,2 +1,4 @@
 hello.elf
 qemu-counter/build
+*.swp
+test.dat
